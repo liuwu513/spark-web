@@ -13,7 +13,7 @@ import java.util.List;
 
 public class App {
     public static void main(String[] args) {
-        SparkSession sparkSession = SparkSession.builder().appName("howell").master("spark://howell-XPS:7077").getOrCreate();
+        SparkSession sparkSession = SparkSession.builder().appName("howell").master("spark://master:7077").getOrCreate();
         SparkContext sparkContext = sparkSession.sparkContext();
 
         // 创建一个RDD
