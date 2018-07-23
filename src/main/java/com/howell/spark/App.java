@@ -49,8 +49,8 @@ public class App {
 
 // SQL查询的结果是DataFrames类型，支持所有一般的RDD操作
 // 结果的列可以通过属性的下标或者名字获取
-        Dataset<String> namesDS = results.map(row -> "Name: " + row.getString(0), Encoders.STRING());
-        namesDS.show();
+//        Dataset<String> namesDS = results.map(row -> "Name: " + row.getString(0), Encoders.STRING());
+//        namesDS.show();
 
     }
 }

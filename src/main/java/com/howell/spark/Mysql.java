@@ -51,5 +51,9 @@ public class Mysql {
             e.printStackTrace();
         }
 
+        Dataset<Row> dataset = sparkSession.read().csv("/user/root/Dbuser/user.csv");
+
+        dataset.show();
+
     }
 }
