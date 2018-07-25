@@ -15,7 +15,7 @@ import java.util.List;
 public class SparkPi {
     public static void main(String[] args) {
         SparkConf sparkConf = new SparkConf();
-        sparkConf.setAppName("Howell").setMaster("spark://master:7077");
+        sparkConf.setAppName("Howell");
         SparkContext sparkContext = new SparkContext(sparkConf);
         SparkSession sparkSession = new SparkSession(sparkContext);
 
