@@ -30,9 +30,21 @@ public class SparkPi {
         db_user.setSex(1);
         db_user.setCid("44051234234245334433");
         list.add(db_user);
+        db_user = new DB_User();
+        db_user.setId(1);
+        db_user.setName("YangHaiHua");
+        db_user.setAge(14);
+        db_user.setSex(1);
+        db_user.setCid("540034513451345433344");
+        list.add(db_user);
+
 
         Dataset<Row>  db = sparkSession.createDataFrame(list, DB_User.class);
-        db.write().mode(SaveMode.Overwrite).csv("/user/SparkPi/user.csv");
+        db.write().mode(SaveMode.Overwrite).json("/user/SparkPi/user.json");
+
+
+       // sparkSession.read().json("/user/SparkPi/user.json").flatMap()
+
 
     }
 }
