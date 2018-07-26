@@ -37,19 +37,25 @@ public class GoodsItemNameByPosition {
     }
 
 
-    public static void save(String goods_category, SparkContext sc, SparkSession sparkSession){
-
+    public static void save(String goods_category, SparkContext sc, SparkSession sparkSession, int position){
 
         Dataset<Row> goodsDF = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/source.json");
 
         JavaRDD<Row> dataset = goodsDF.filter(goodsDF.col("goods_category").equalTo(goods_category)).select("item_name").toJavaRDD();
 
-        JavaRDD<String> words = dataset.flatMap(s -> Arrays.asList(SPACE.split(s.toString().replaceAll(regexStr, ""))).iterator());
+        JavaRDD<String> words = dataset.flatMap(s -> {
+            String str = s.toString().replaceAll(regexStr, "");
+            if(str.length() >= position){
+                str = str.substring(position-1, position);
+            } else {
+                str = "";
+            }
+            return Arrays.asList(str).iterator();
+        });
 
         JavaPairRDD<String, Integer> ones = words.mapToPair(s -> new Tuple2<>(s, 1));
 
         JavaPairRDD<String, Integer> counts = ones.reduceByKey((i1, i2) -> i1 + i2);
-
 
         List<Tuple2<String, Integer>> output = counts.collect();
 
@@ -73,11 +79,13 @@ public class GoodsItemNameByPosition {
             RDDKeyByCounts keyByCounts = new RDDKeyByCounts();
             keyByCounts.setName(tuple._1().toString());
             keyByCounts.setCounts(tuple._2().toString());
-            list.add(keyByCounts);
+            if(!tuple._1().toString().equals("")){
+                list.add(keyByCounts);
+            }
         }
 
         Dataset<Row> df = sparkSession.createDataFrame(list, RDDKeyByCounts.class);
-        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/"+goods_category +"/category.json");
+        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/"+goods_category + "/" + position +"/position.json");
 
     }
 
@@ -89,7 +97,9 @@ public class GoodsItemNameByPosition {
         SparkSession sparkSession = new SparkSession(sc);
 
         for (int i=1; i<=45; i++){
-            save(String.valueOf(i), sc, sparkSession);
+            for(int j=2; j <=4; j++) {
+                save(String.valueOf(i), sc, sparkSession, j);
+            }
         }
         sparkSession.stop();
     }

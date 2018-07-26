@@ -69,7 +69,9 @@ public class GoodsItemNameByCategory {
             RDDKeyByCounts keyByCounts = new RDDKeyByCounts();
             keyByCounts.setName(tuple._1().toString());
             keyByCounts.setCounts(tuple._2().toString());
-            list.add(keyByCounts);
+            if(!tuple._1().toString().equals("")){
+                list.add(keyByCounts);
+            }
         }
 
         Dataset<Row> df = sparkSession.createDataFrame(list, RDDKeyByCounts.class);
