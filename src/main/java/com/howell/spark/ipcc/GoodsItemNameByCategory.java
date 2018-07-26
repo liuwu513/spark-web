@@ -58,14 +58,14 @@ public class GoodsItemNameByCategory {
             public Integer call(Tuple2<String, Integer> v )  {
                 return v._2();
             }
-        }, false, 2);
+        }, false, 3);
         output =  tuple2JavaRDD.collect();
 
 
         //List<Tuple2<String, Integer>> output = counts.sortByKey().collect();
         List<RDDKeyByCounts> list = new ArrayList<>();
-        for (Tuple2<?,?> tuple : output) {
-            System.out.println(tuple._1() + ": " + tuple._2());
+        for (int i=0; i<output.size()&&i<50; i++) {
+            Tuple2<?,?> tuple = output.get(i);
             RDDKeyByCounts keyByCounts = new RDDKeyByCounts();
             keyByCounts.setName(tuple._1().toString());
             keyByCounts.setCounts(tuple._2().toString());

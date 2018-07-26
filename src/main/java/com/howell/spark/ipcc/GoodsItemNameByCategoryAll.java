@@ -21,10 +21,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * 拆分分词库
- * 2~4位置
+ * 统计分词库
  */
-public class GoodsItemNameByPosition {
+public class GoodsItemNameByCategoryAll {
 
     private static final Pattern SPACE = Pattern.compile("");
     private static final String regexStr = "[^\u4E00-\u9FA5]";  //匹配中文的正则表达式
@@ -37,25 +36,19 @@ public class GoodsItemNameByPosition {
     }
 
 
-    public static void save(String goods_category, SparkContext sc, SparkSession sparkSession, int position){
+    public static void save(SparkContext sc, SparkSession sparkSession){
+
 
         Dataset<Row> goodsDF = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/source.json");
 
-        JavaRDD<Row> dataset = goodsDF.filter(goodsDF.col("goods_category").equalTo(goods_category)).select("item_name").toJavaRDD();
+        JavaRDD<Row> dataset = goodsDF.select("item_name").toJavaRDD();
 
-        JavaRDD<String> words = dataset.flatMap(s -> {
-            String str = s.toString().replaceAll(regexStr, "");
-            if(str.length() >= position){
-                str = str.substring(position-1, position);
-            } else {
-                str = "";
-            }
-            return Arrays.asList(str).iterator();
-        });
+        JavaRDD<String> words = dataset.flatMap(s -> Arrays.asList(SPACE.split(s.toString().replaceAll(regexStr, ""))).iterator());
 
         JavaPairRDD<String, Integer> ones = words.mapToPair(s -> new Tuple2<>(s, 1));
 
         JavaPairRDD<String, Integer> counts = ones.reduceByKey((i1, i2) -> i1 + i2);
+
 
         List<Tuple2<String, Integer>> output = counts.collect();
 
@@ -83,8 +76,9 @@ public class GoodsItemNameByPosition {
                 list.add(keyByCounts);
             }
         }
+
         Dataset<Row> df = sparkSession.createDataFrame(list, RDDKeyByCounts.class);
-        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/"+goods_category + "/" + position +"/position.json");
+        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all/category.json");
 
     }
 
@@ -95,11 +89,7 @@ public class GoodsItemNameByPosition {
 
         SparkSession sparkSession = new SparkSession(sc);
 
-        for (int i=1; i<=45; i++){
-            for(int j=2; j <=4; j++) {
-                save(String.valueOf(i), sc, sparkSession, j);
-            }
-        }
+        save(sc, sparkSession);
         sparkSession.stop();
     }
 }
