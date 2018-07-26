@@ -30,16 +30,13 @@ public class GoodsItemNameByCategory {
         }
     }
 
-    public static void main(String[] args) {
-        //自定义比较器
-        SparkConf conf = new SparkConf().setAppName("wtoip_ipcc_goods");
-        SparkContext sc = new SparkContext(conf);
 
-        SparkSession sparkSession = new SparkSession(sc);
+    public static void save(String goods_category, SparkContext sc, SparkSession sparkSession){
+
 
         Dataset<Row> goodsDF = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/source.json");
 
-        JavaRDD<Row> dataset = goodsDF.select("item_name").toJavaRDD();
+        JavaRDD<Row> dataset = goodsDF.filter(goodsDF.col("goods_category").equalTo(goods_category)).select("item_name").toJavaRDD();
 
         JavaRDD<String> words = dataset.flatMap(s -> Arrays.asList(SPACE.split(s.toString().replaceAll(regexStr, ""))).iterator());
 
@@ -74,9 +71,20 @@ public class GoodsItemNameByCategory {
         }
 
         Dataset<Row> df = sparkSession.createDataFrame(list, RDDKeyByCounts.class);
-        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/GoodsItemNameByCategory.json");
-        sparkSession.stop();
-        //dataset.show();
+        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/"+goods_category +"/category.json");
 
+    }
+
+    public static void main(String[] args) {
+        //自定义比较器
+        SparkConf conf = new SparkConf().setAppName("wtoip_ipcc_goods");
+        SparkContext sc = new SparkContext(conf);
+
+        SparkSession sparkSession = new SparkSession(sc);
+
+        for (int i=1; i<=45; i++){
+            save(String.valueOf(i), sc, sparkSession);
+        }
+        sparkSession.stop();
     }
 }
