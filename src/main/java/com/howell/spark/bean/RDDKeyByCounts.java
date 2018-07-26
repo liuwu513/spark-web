@@ -6,4 +6,5 @@ import lombok.Data;
 public class RDDKeyByCounts {
     private String name;
     private String counts;
+    private String goods_category;
 }

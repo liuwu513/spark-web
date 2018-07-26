@@ -1,6 +1,6 @@
 package com.howell.spark.ipcc;
 
-import com.howell.spark.bean.DB_ipcc_goods;
+import com.howell.spark.bean.RDDKeyByCounts;
 import com.howell.spark.bean.RDDKeyByCounts;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
@@ -37,50 +37,58 @@ public class GoodsItemNameByCombination {
      */
     public static void readAll(SparkContext sc, SparkSession sparkSession){
         Dataset<Row> goodsDF = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/all/category.json");
-        List<Row> list = goodsDF.select("name").toJavaRDD().collect();
-        List<DB_ipcc_goods> dbIpccGoodsList = new ArrayList<>();
+        List<Row> list = goodsDF.select("name","counts").toJavaRDD().collect();
+        List<RDDKeyByCounts> idbIpccGoodsList = new ArrayList<>();
+        List<RDDKeyByCounts> jdbIpccGoodsList = new ArrayList<>();
+        List<RDDKeyByCounts> ydbIpccGoodsList = new ArrayList<>();
         for (int i=0; i<list.size();i++){
             Row iRow = list.get(i);
             for (int j=0; j<list.size();j++){
                 Row jRow = list.get(j);
-                DB_ipcc_goods jdb_ipcc_goods = new DB_ipcc_goods();
+                RDDKeyByCounts jRDDKeyByCounts = new RDDKeyByCounts();
                 if(!iRow.getString(0).equals(jRow.getString(0))){
                     String word = iRow.getString(0)+jRow.getString(0);
-                    jdb_ipcc_goods.setItem_name(word);
-                    jdb_ipcc_goods.setGoods_category("all");
-                    dbIpccGoodsList.add(jdb_ipcc_goods);
+                    jRDDKeyByCounts.setName(word);
+                    jRDDKeyByCounts.setCounts(String.valueOf( Integer.parseInt(iRow.getString(1)) + Integer.parseInt(jRow.getString(1)) ));
+                    jRDDKeyByCounts.setGoods_category("all");
+                    idbIpccGoodsList.add(jRDDKeyByCounts);
                 }
                 for(int x=0;x<list.size();x++){
                     Row xRow = list.get(x);
-                    DB_ipcc_goods xdb_ipcc_goods = new DB_ipcc_goods();
+                    RDDKeyByCounts xRDDKeyByCounts = new RDDKeyByCounts();
                     if(!iRow.getString(0).equals(jRow.getString(0)) && !iRow.getString(0).equals(xRow.getString(0)) && !jRow.getString(0).equals(xRow.getString(0))){
                         String word = iRow.getString(0)+jRow.getString(0)+xRow.getString(0);
-                        xdb_ipcc_goods.setItem_name(word);
-                        xdb_ipcc_goods.setGoods_category("all");
-                        dbIpccGoodsList.add(xdb_ipcc_goods);
+                        xRDDKeyByCounts.setName(word);
+                        jRDDKeyByCounts.setCounts(String.valueOf( Integer.parseInt(iRow.getString(1)) + Integer.parseInt(jRow.getString(1)) + Integer.parseInt(xRow.getString(1)) ));
+                        xRDDKeyByCounts.setGoods_category("all");
+                        jdbIpccGoodsList.add(xRDDKeyByCounts);
                     }
-                    for(int y=0;y<list.size();y++){
-                        Row yRow = list.get(y);
-                        DB_ipcc_goods ydb_ipcc_goods = new DB_ipcc_goods();
-                        if(!iRow.getString(0).equals(jRow.getString(0))
-                                && !iRow.getString(0).equals(xRow.getString(0))
-                                && !iRow.getString(0).equals(yRow.getString(0))
-                                && !jRow.getString(0).equals(xRow.getString(0))
-                                && !jRow.getString(0).equals(yRow.getString(0))
-                                && !xRow.getString(0).equals(yRow.getString(0))
-                                ){
-                            String word = iRow.getString(0)+jRow.getString(0)+xRow.getString(0)+yRow.getString(0);
-                            ydb_ipcc_goods.setItem_name(word);
-                            ydb_ipcc_goods.setGoods_category("all");
-                            dbIpccGoodsList.add(ydb_ipcc_goods);
-                        }
-                    }
+//                    for(int y=0;y<list.size();y++){
+//                        Row yRow = list.get(y);
+//                        RDDKeyByCounts yRDDKeyByCounts = new RDDKeyByCounts();
+//                        if(!iRow.getString(0).equals(jRow.getString(0))
+//                                && !iRow.getString(0).equals(xRow.getString(0))
+//                                && !iRow.getString(0).equals(yRow.getString(0))
+//                                && !jRow.getString(0).equals(xRow.getString(0))
+//                                && !jRow.getString(0).equals(yRow.getString(0))
+//                                && !xRow.getString(0).equals(yRow.getString(0))
+//                                ){
+//                            String word = iRow.getString(0)+jRow.getString(0)+xRow.getString(0)+yRow.getString(0);
+//                            yRDDKeyByCounts.setName(word);
+//                            yRDDKeyByCounts.setGoods_category("all");
+//                            ydbIpccGoodsList.add(yRDDKeyByCounts);
+//                        }
+//                    }
                 }
             }
         }
 
-        Dataset<Row> df = sparkSession.createDataFrame(dbIpccGoodsList, DB_ipcc_goods.class);
-        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all.json");
+        Dataset<Row> df = sparkSession.createDataFrame(idbIpccGoodsList, RDDKeyByCounts.class);
+        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all2.json");
+        df = sparkSession.createDataFrame(jdbIpccGoodsList, RDDKeyByCounts.class);
+        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all3.json");
+//        df = sparkSession.createDataFrame(ydbIpccGoodsList, RDDKeyByCounts.class);
+//        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all4.json");
     }
 
     public static void main(String[] args) {
