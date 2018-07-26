@@ -14,13 +14,17 @@ import org.apache.spark.sql.SparkSession;
 import scala.Tuple2;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * 统计分词库
+ * 拆分分词库
+ * 2~4位置
  */
-public class GoodsItemNameByCategory {
+public class GoodsItemNameByPosition {
 
     private static final Pattern SPACE = Pattern.compile("");
     private static final String regexStr = "[^\u4E00-\u9FA5]";  //匹配中文的正则表达式
