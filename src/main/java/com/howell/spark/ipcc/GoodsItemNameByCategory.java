@@ -5,6 +5,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
@@ -48,7 +50,18 @@ public class GoodsItemNameByCategory {
 
         List<Tuple2<String, Integer>> output = counts.collect();
 
-        output.sort(new TupleComparator());
+        JavaSparkContext jsc = new JavaSparkContext(sc);
+        JavaRDD<Tuple2<String, Integer>> tuple2JavaRDD = jsc.parallelize(output);
+        // 排序
+        tuple2JavaRDD = tuple2JavaRDD.sortBy(new Function<Tuple2<String, Integer>, Integer>() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Integer call(Tuple2<String, Integer> v )  {
+                return v._2();
+            }
+        }, false, 2);
+        output =  tuple2JavaRDD.collect();
+
 
         //List<Tuple2<String, Integer>> output = counts.sortByKey().collect();
         List<RDDKeyByCounts> list = new ArrayList<>();
