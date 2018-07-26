@@ -7,6 +7,6 @@ import java.io.Serializable;
 @Data
 public class RDDKeyByCounts implements Serializable {
     private String name;
-    private String counts;
+    private Integer counts;
     private String goods_category;
 }

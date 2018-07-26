@@ -71,7 +71,7 @@ public class GoodsItemNameByCategoryAll {
             Tuple2<?,?> tuple = output.get(i);
             RDDKeyByCounts keyByCounts = new RDDKeyByCounts();
             keyByCounts.setName(tuple._1().toString());
-            keyByCounts.setCounts(tuple._2().toString());
+            keyByCounts.setCounts(Integer.parseInt(tuple._2().toString()));
             if(!tuple._1().toString().equals("")){
                 list.add(keyByCounts);
             }
