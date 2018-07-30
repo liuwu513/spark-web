@@ -79,7 +79,7 @@ public class GoodsItemNameByPosition {
             RDDKeyByCounts keyByCounts = new RDDKeyByCounts();
             keyByCounts.setName(tuple._1().toString());
             keyByCounts.setCounts(Integer.parseInt(tuple._2().toString()));
-            if(!tuple._1().toString().equals("")){
+            if(!tuple._1().toString().equals("") && Integer.parseInt(tuple._2().toString()) >= 10){
                 list.add(keyByCounts);
             }
         }

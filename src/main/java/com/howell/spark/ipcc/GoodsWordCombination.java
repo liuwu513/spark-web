@@ -4,6 +4,7 @@ import com.howell.spark.bean.RDDKeyByCounts;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.*;
 import scala.Function1;
@@ -33,6 +34,18 @@ public class GoodsWordCombination {
         JavaRDD<Row> rdd1 = goodsDF1.select("name", "counts").toJavaRDD();
         JavaRDD<Row> rdd2 = goodsDF1.select("name", "counts").toJavaRDD();
         List<Tuple2<Row, Row>> output = rdd1.cartesian(rdd2).collect();
+        JavaSparkContext jsc = new JavaSparkContext(sc);
+        JavaRDD<Tuple2<Row, Row>> tuple2JavaRDD = jsc.parallelize(output);
+        // 排序
+        tuple2JavaRDD = tuple2JavaRDD.sortBy(new Function<Tuple2<Row, Row>, Integer>() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Integer call(Tuple2<Row, Row> v )  {
+                return Integer.parseInt(v._1().get(1).toString())+Integer.parseInt(v._2().get(1).toString());
+            }
+        }, false, 3);
+        output =  tuple2JavaRDD.collect();
+
         List<RDDKeyByCounts> list = new ArrayList<>();
         for (int i=0; i<output.size(); i++) {
             Tuple2<Row,Row> tuple = output.get(i);
@@ -59,6 +72,17 @@ public class GoodsWordCombination {
         Dataset<Row> goodsDF2 = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/all/combination2.json");
         JavaRDD<Row> rdd2 = goodsDF2.select("name", "counts").toJavaRDD();
         List<Tuple2<Row, Row>> output = rdd1.cartesian(rdd2).collect();
+        JavaSparkContext jsc = new JavaSparkContext(sc);
+        JavaRDD<Tuple2<Row, Row>> tuple2JavaRDD = jsc.parallelize(output);
+        // 排序
+        tuple2JavaRDD = tuple2JavaRDD.sortBy(new Function<Tuple2<Row, Row>, Integer>() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Integer call(Tuple2<Row, Row> v )  {
+                return Integer.parseInt(v._1().get(1).toString())+Integer.parseInt(v._2().get(1).toString());
+            }
+        }, false, 3);
+        output =  tuple2JavaRDD.collect();
         List<RDDKeyByCounts> list = new ArrayList<>();
         for (int i=0; i<output.size(); i++) {
             Tuple2<Row,Row> tuple = output.get(i);
@@ -85,7 +109,21 @@ public class GoodsWordCombination {
         Dataset<Row> goodsDF2 = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/all/combination3.json");
         JavaRDD<Row> rdd2 = goodsDF2.select("name", "counts").toJavaRDD();
         List<Tuple2<Row, Row>> output = rdd1.cartesian(rdd2).collect();
+
+        JavaSparkContext jsc = new JavaSparkContext(sc);
+        JavaRDD<Tuple2<Row, Row>> tuple2JavaRDD = jsc.parallelize(output);
+        // 排序
+        tuple2JavaRDD = tuple2JavaRDD.sortBy(new Function<Tuple2<Row, Row>, Integer>() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Integer call(Tuple2<Row, Row> v )  {
+                return Integer.parseInt(v._1().get(1).toString())+Integer.parseInt(v._2().get(1).toString());
+            }
+        }, false, 3);
+        output =  tuple2JavaRDD.collect();
+
         List<RDDKeyByCounts> list = new ArrayList<>();
+        int file_item=0;
         for (int i=0; i<output.size(); i++) {
             Tuple2<Row,Row> tuple = output.get(i);
             RDDKeyByCounts keyByCounts = new RDDKeyByCounts();
@@ -94,9 +132,15 @@ public class GoodsWordCombination {
             if(!tuple._2().getString(0).contains(tuple._1().getString(0))){
                 list.add(keyByCounts);
             }
+            if(i%50000==0){
+                file_item +=1;
+                Dataset<Row> df = sparkSession.createDataFrame(list,  RDDKeyByCounts.class);
+                df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all/combination4.json/"+file_item+".json");
+                list = new ArrayList<>();
+            }
         }
         Dataset<Row> df = sparkSession.createDataFrame(list,  RDDKeyByCounts.class);
-        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all/combination4.json");
+        df.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/all/combination4.json/"+file_item+".json");
     }
 
     public static void main(String[] args) {
