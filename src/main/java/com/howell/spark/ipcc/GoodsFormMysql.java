@@ -15,7 +15,7 @@ import java.util.List;
 public class GoodsFormMysql {
     public static Connection getConnection(){
         try {
-            return  DriverManager.getConnection("jdbc:mysql://10.15.51.100:3306/wtoip_ipcc_goods","root","wtoip@2015");
+            return  DriverManager.getConnection("jdbc:mysql://10.15.51.100:3306/wtoip_ipcc_goods_prod","root","wtoip@2015");
         } catch (SQLException e) {
             e.printStackTrace();
         }
