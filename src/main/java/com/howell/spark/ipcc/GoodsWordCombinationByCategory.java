@@ -20,7 +20,12 @@ public class GoodsWordCombinationByCategory {
         Dataset<Row> goodsDF0 = sparkSession.read().format("json").json("/ipcc/wtoip_ipcc_goods/all/category.json");
 
         //第二位数据集合
-        Dataset<Row> goodsDF1 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/%s/position.json", 1, 2));
+        Dataset<Row> goodsDF1 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/%s/position.json", goods_category, 2));
+
+        if (goodsDF1.count() == 0) {
+            return;
+        }
+
         //过滤数据集合
         Dataset<Row> filterDF1 = goodsDF1.selectExpr("name as secondName", "counts as secondCounts").where(String.format("counts >= %d", minCounts));
 
@@ -29,21 +34,29 @@ public class GoodsWordCombinationByCategory {
         //移除重复值
         Dataset<Row> distinctCombination2DF = combination2DF.dropDuplicates("name");
 
-        distinctCombination2DF.write().mode(SaveMode.Overwrite).json("/ipcc/wtoip_ipcc_goods/1/combination2.json");
-
+        distinctCombination2DF.write().mode(SaveMode.Overwrite).json(String.format("/ipcc/wtoip_ipcc_goods/%s/combination2.json", goods_category));
         //拼装 1,2,3位
         read3ByCategory(sc, sparkSession, goods_category);
+
     }
 
     public static void read3ByCategory(SparkContext sc, SparkSession sparkSession, String goods_category) {
         //1和2组合
         Dataset<Row> goodsDF1 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/combination2.json", goods_category));
+        if (goodsDF1.count() == 0) {
+            return;
+        }
         //第三位数据集合
-        Dataset<Row> goodsDF2 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/%s/position.json", 1, 3));
+        Dataset<Row> goodsDF2 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/%s/position.json", goods_category, 3));
+        if (goodsDF2.count() == 0) {
+            return;
+        }
+
+
         //过滤数据集合
         Dataset<Row> filterDF2 = goodsDF2.selectExpr("name as secondName", "counts as secondCounts").where(String.format("counts >= %d", minCounts));
         //1、2、3位组合
-        Dataset<Row> combination3DF = goodsDF1.crossJoin(filterDF2).selectExpr("concat(name,secondName) as combination2Name", "(counts + secondCounts) as count2Total");
+        Dataset<Row> combination3DF = goodsDF1.crossJoin(filterDF2).selectExpr("concat(name,secondName) as name", "(counts + secondCounts) as counts");
 
         //移除重复值
         Dataset<Row> distinctCombination3DF = combination3DF.dropDuplicates("name");
@@ -57,12 +70,20 @@ public class GoodsWordCombinationByCategory {
     public static void read4ByCategory(SparkContext sc, SparkSession sparkSession, String goods_category) {
         //1、2、3组合
         Dataset<Row> goodsDF1 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/combination3.json", goods_category));
+        if (goodsDF1.count() == 0) {
+            return;
+        }
+
         //第4位数据集合
-        Dataset<Row> goodsDF2 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/%s/position.json", 1, 4));
+        Dataset<Row> goodsDF2 = sparkSession.read().format("json").json(String.format("/ipcc/wtoip_ipcc_goods/%s/%s/position.json", goods_category, 4));
+        if (goodsDF2.count() == 0) {
+            return;
+        }
+
         //过滤数据集合
         Dataset<Row> filterDF2 = goodsDF2.selectExpr("name as secondName", "counts as secondCounts").where(String.format("counts >= %d", minCounts));
         //1、2、3、4位组合
-        Dataset<Row> combination3DF = goodsDF1.crossJoin(filterDF2).selectExpr("concat(name,secondName) as combination2Name", "(counts + secondCounts) as count2Total");
+        Dataset<Row> combination3DF = goodsDF1.crossJoin(filterDF2).selectExpr("concat(name,secondName) as name", "(counts + secondCounts) as counts");
 
         //移除重复值
         Dataset<Row> distinctCombination3DF = combination3DF.dropDuplicates("name");
@@ -77,7 +98,7 @@ public class GoodsWordCombinationByCategory {
         SparkContext sc = new SparkContext(conf);
 
         SparkSession sparkSession = new SparkSession(sc);
-        for (int i = 0; i <= 45; i++) {
+        for (int i = 1; i <= 45; i++) {
             read2ByCategory(sc, sparkSession, String.valueOf(i));
         }
         sparkSession.stop();
